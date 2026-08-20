@@ -79,7 +79,6 @@ select:focus-visible {
 
 .brand-block,
 .topbar-actions,
-.readout-title,
 .playback-controls,
 .control-field {
   display: flex;
@@ -118,8 +117,7 @@ select:focus-visible {
   box-shadow: 0 0 12px rgba(255, 209, 102, 0.7);
 }
 
-.brand-block h1,
-.body-readout h2 {
+.brand-block h1 {
   margin: 0;
   font-weight: 650;
 }
@@ -173,19 +171,20 @@ select:focus-visible {
 .body-rail {
   position: fixed;
   z-index: 18;
-  top: 68px;
-  bottom: 92px;
-  left: 0;
+  top: 86px;
+  left: 18px;
   width: 154px;
-  padding: 16px 12px;
+  max-height: calc(100vh - 194px);
+  padding: 12px;
   background: var(--panel);
-  border-right: 1px solid var(--line);
+  border: 1px solid var(--line);
+  border-radius: 6px;
   overflow-y: auto;
 }
 
 .rail-heading {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   margin: 0 6px 11px;
   color: var(--muted);
   font-size: 10px;
@@ -224,8 +223,7 @@ select:focus-visible {
   border-color: var(--line);
 }
 
-.body-swatch,
-.large-swatch {
+.body-swatch {
   flex: 0 0 auto;
   border-radius: 50%;
   box-shadow: inset -2px -2px 3px rgba(0, 0, 0, 0.35);
@@ -234,67 +232,6 @@ select:focus-visible {
 .body-swatch {
   width: 9px;
   height: 9px;
-}
-
-.body-readout {
-  position: fixed;
-  z-index: 18;
-  top: 86px;
-  right: 18px;
-  width: 226px;
-  padding: 15px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-}
-
-.readout-title {
-  gap: 11px;
-}
-
-.large-swatch {
-  width: 31px;
-  height: 31px;
-}
-
-.eyebrow {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--muted);
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.body-readout h2 {
-  font-size: 18px;
-}
-
-.body-readout dl {
-  display: grid;
-  gap: 8px;
-  margin: 14px 0 0;
-}
-
-.body-readout dl div {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
-  font-size: 11px;
-}
-
-.body-readout dt {
-  color: var(--muted);
-}
-
-.body-readout dd {
-  margin: 0;
-  color: #eef1f4;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 .indicator-layer {
@@ -363,20 +300,28 @@ select:focus-visible {
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.7);
 }
 
+.body-indicator.selected .indicator-reticle {
+  border-width: 2px;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.8),
+    0 0 0 4px rgba(255, 255, 255, 0.32);
+}
+
 .time-console {
   position: fixed;
   z-index: 22;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 92px;
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  height: 72px;
   display: grid;
   grid-template-columns: auto minmax(220px, 1fr) auto auto;
   align-items: center;
   gap: 16px;
-  padding: 13px 18px;
+  padding: 10px 12px;
   background: var(--panel-strong);
-  border-top: 1px solid var(--line);
+  border: 1px solid var(--line);
+  border-radius: 6px;
 }
 
 .playback-controls {
@@ -466,14 +411,15 @@ select:focus-visible {
 
   .body-rail {
     top: auto;
-    right: 0;
-    bottom: 132px;
-    left: 0;
+    right: 10px;
+    bottom: 154px;
+    left: 10px;
     width: auto;
     height: 48px;
+    max-height: none;
     padding: 6px 8px;
-    border-top: 1px solid var(--line);
-    border-right: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
     overflow-x: auto;
     overflow-y: hidden;
   }
@@ -494,32 +440,21 @@ select:focus-visible {
     padding: 6px 9px;
   }
 
-  .body-readout {
-    top: 72px;
-    right: 10px;
-    width: 184px;
-    padding: 11px;
-  }
-
-  .body-readout dl {
-    margin-top: 9px;
-  }
-
-  .body-readout dl div {
-    padding-top: 6px;
-    font-size: 10px;
-  }
-
   .indicator-layer {
     inset: 0;
   }
 
   .time-console {
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
     height: 132px;
     grid-template-columns: auto minmax(120px, 1fr);
     grid-template-rows: 46px 46px;
     gap: 7px 10px;
     padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
   }
 
   .playback-controls {
@@ -553,14 +488,6 @@ select:focus-visible {
 }
 
 @media (max-width: 520px) {
-  .body-readout {
-    width: 164px;
-  }
-
-  .body-readout dl div:nth-child(3) {
-    display: none;
-  }
-
   .body-button {
     font-size: 11px;
   }

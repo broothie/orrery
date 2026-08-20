@@ -2,7 +2,6 @@ import {
   CalendarClock,
   Gauge,
   LocateFixed,
-  Navigation,
   Pause,
   Play,
   RotateCcw,
@@ -13,8 +12,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BODY_DEFINITIONS,
   calculateBodyStates,
-  formatDistance,
-  formatRadius,
   type BodyId,
 } from "./astronomy";
 import { SolarSystem, type BodyIndicator } from "./SolarSystem";
@@ -54,7 +51,10 @@ export function App() {
   const [playing, setPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(86_400);
   const [direction, setDirection] = useState<1 | -1>(1);
-  const [selectedId, setSelectedId] = useState<BodyId>("sun");
+  const [focusedId, setFocusedId] = useState<BodyId>("sun");
+  const [selectedIds, setSelectedIds] = useState<Set<BodyId>>(
+    () => new Set(["sun"]),
+  );
   const [focusSequence, setFocusSequence] = useState(0);
   const [overviewSequence, setOverviewSequence] = useState(0);
   const [indicators, setIndicators] = useState<BodyIndicator[]>([]);
@@ -64,7 +64,6 @@ export function App() {
     () => calculateBodyStates(new Date(timeMs)),
     [timeMs],
   );
-  const selected = bodies.find((body) => body.id === selectedId)!;
   const scrubDays = (timeMs - J2000_MS) / DAY_MS;
 
   useEffect(() => {
@@ -90,13 +89,28 @@ export function App() {
     return () => cancelAnimationFrame(frame);
   }, [direction, playbackRate, playing]);
 
-  const focusBody = useCallback((id: BodyId) => {
-    setSelectedId(id);
+  const selectBody = useCallback((id: BodyId, additive = false) => {
+    if (additive) {
+      setSelectedIds((current) => {
+        const next = new Set(current);
+        if (next.has(id) && next.size > 1) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+      return;
+    }
+
+    setSelectedIds(new Set([id]));
+    setFocusedId(id);
     setFocusSequence((sequence) => sequence + 1);
   }, []);
 
   const showOverview = useCallback(() => {
-    setSelectedId("sun");
+    setSelectedIds(new Set(["sun"]));
+    setFocusedId("sun");
     setOverviewSequence((sequence) => sequence + 1);
   }, []);
 
@@ -109,10 +123,11 @@ export function App() {
       <section className="viewport" aria-label="Interactive Solar System">
         <SolarSystem
           bodies={bodies}
-          selectedId={selectedId}
+          focusedId={focusedId}
+          selectedIds={selectedIds}
           focusSequence={focusSequence}
           overviewSequence={overviewSequence}
-          onSelect={focusBody}
+          onSelect={selectBody}
           onIndicators={updateIndicators}
         />
       </section>
@@ -145,16 +160,17 @@ export function App() {
       <aside className="body-rail" aria-label="Celestial bodies">
         <div className="rail-heading">
           <span>Bodies</span>
-          <span>{BODY_DEFINITIONS.length}</span>
         </div>
         <div className="body-list">
           {BODY_DEFINITIONS.map((body) => (
             <button
-              className={`body-button ${selectedId === body.id ? "selected" : ""}`}
+              className={`body-button ${selectedIds.has(body.id) ? "selected" : ""}`}
               key={body.id}
               type="button"
-              onClick={() => focusBody(body.id)}
-              aria-pressed={selectedId === body.id}
+              onClick={(event) =>
+                selectBody(body.id, event.metaKey || event.ctrlKey)
+              }
+              aria-pressed={selectedIds.has(body.id)}
             >
               <span className="body-swatch" style={{ background: body.color }} />
               <span>{body.name}</span>
@@ -163,50 +179,20 @@ export function App() {
         </div>
       </aside>
 
-      <aside className="body-readout" aria-live="polite">
-        <div className="readout-title">
-          <span className="large-swatch" style={{ background: selected.color }} />
-          <div>
-            <span className="eyebrow">Focused body</span>
-            <h2>{selected.name}</h2>
-          </div>
-        </div>
-        <dl>
-          <div>
-            <dt>Radius</dt>
-            <dd>{formatRadius(selected.radiusKm)}</dd>
-          </div>
-          <div>
-            <dt>Sun distance</dt>
-            <dd>{selected.id === "sun" ? "Origin" : formatDistance(selected.distanceFromSunAU)}</dd>
-          </div>
-          <div>
-            <dt>Scale</dt>
-            <dd>1 unit = 1M km</dd>
-          </div>
-        </dl>
-      </aside>
-
       <div className="indicator-layer" aria-label="Body indicators">
         {indicators.map((indicator) => (
           <button
             key={indicator.id}
             type="button"
-            className={`body-indicator ${indicator.edge ? "edge" : "onscreen"}`}
+            className={`body-indicator onscreen ${indicator.selected ? "selected" : ""}`}
             style={{ left: indicator.x, top: indicator.y }}
-            onClick={() => focusBody(indicator.id)}
+            onClick={(event) =>
+              selectBody(indicator.id, event.metaKey || event.ctrlKey)
+            }
             title={`Focus ${indicator.name}`}
             aria-label={`Focus ${indicator.name}`}
           >
-            {indicator.edge ? (
-              <Navigation
-                size={15}
-                fill="currentColor"
-                style={{ transform: `rotate(${indicator.angle + 90}deg)` }}
-              />
-            ) : (
-              <span className="indicator-reticle" style={{ borderColor: indicator.color }} />
-            )}
+            <span className="indicator-reticle" style={{ borderColor: indicator.color }} />
             <span>{indicator.name}</span>
           </button>
         ))}

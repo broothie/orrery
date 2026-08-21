@@ -167,7 +167,7 @@ export function App() {
           </div>
           <div>
             <h1>Orrery</h1>
-            <p>To-scale Solar System</p>
+            <p>To-scale solar system</p>
           </div>
         </div>
 

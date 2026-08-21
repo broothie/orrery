@@ -1,5 +1,7 @@
 import {
   CalendarClock,
+  ChevronDown,
+  ChevronRight,
   Gauge,
   Pause,
   Play,
@@ -8,7 +10,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  BODY_DEFINITIONS,
+  MOON_DEFINITIONS,
+  PRIMARY_BODY_DEFINITIONS,
   calculateBodyStates,
   type BodyId,
 } from "./astronomy";
@@ -40,6 +43,22 @@ export function App() {
   const [focusedId, setFocusedId] = useState<BodyId>("sun");
   const [selectedIds, setSelectedIds] = useState<Set<BodyId>>(
     () => new Set(["sun"]),
+  );
+  const [visibleIds, setVisibleIds] = useState<Set<BodyId>>(
+    () => new Set([
+      ...PRIMARY_BODY_DEFINITIONS.map((body) => body.id),
+      "moon",
+    ]),
+  );
+  const [collapsedBodyIds, setCollapsedBodyIds] = useState<Set<BodyId>>(
+    () => new Set<BodyId>(
+      PRIMARY_BODY_DEFINITIONS
+        .filter((body) =>
+          body.id !== "earth"
+          && MOON_DEFINITIONS.some((moon) => moon.parentId === body.id),
+        )
+        .map((body) => body.id),
+    ),
   );
   const [focusSequence, setFocusSequence] = useState(0);
   const [indicators, setIndicators] = useState<BodyIndicator[]>([]);
@@ -75,6 +94,11 @@ export function App() {
   }, [direction, playbackRate, playing]);
 
   const selectBody = useCallback((id: BodyId, additive = false) => {
+    setVisibleIds((current) => {
+      if (current.has(id)) return current;
+      return new Set([...current, id]);
+    });
+
     if (additive) {
       setSelectedIds((current) => {
         const next = new Set(current);
@@ -94,6 +118,30 @@ export function App() {
     setFocusSequence((sequence) => sequence + 1);
   }, []);
 
+  const toggleBodyVisibility = useCallback((id: BodyId) => {
+    setVisibleIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleMoonGroup = useCallback((id: BodyId) => {
+    setCollapsedBodyIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
   const updateIndicators = useCallback((next: BodyIndicator[]) => {
     setIndicators(next);
   }, []);
@@ -105,6 +153,7 @@ export function App() {
           bodies={bodies}
           focusedId={focusedId}
           selectedIds={selectedIds}
+          visibleIds={visibleIds}
           focusSequence={focusSequence}
           onSelect={selectBody}
           onIndicators={updateIndicators}
@@ -128,20 +177,72 @@ export function App() {
           <span>Bodies</span>
         </div>
         <div className="body-list">
-          {BODY_DEFINITIONS.map((body) => (
-            <button
-              className={`body-button ${selectedIds.has(body.id) ? "selected" : ""}`}
-              key={body.id}
-              type="button"
-              onClick={(event) =>
-                selectBody(body.id, event.metaKey || event.ctrlKey)
-              }
-              aria-pressed={selectedIds.has(body.id)}
-            >
-              <span className="body-swatch" style={{ background: body.color }} />
-              <span>{body.name}</span>
-            </button>
-          ))}
+          {PRIMARY_BODY_DEFINITIONS.map((body) => {
+            const moons = MOON_DEFINITIONS.filter((moon) => moon.parentId === body.id);
+            const hasMoons = moons.length > 0;
+            const expanded = hasMoons && !collapsedBodyIds.has(body.id);
+            return (
+              <div className="body-group" key={body.id}>
+                <div className="body-control">
+                  <input
+                    className="body-visibility"
+                    type="checkbox"
+                    checked={visibleIds.has(body.id)}
+                    onChange={() => toggleBodyVisibility(body.id)}
+                    aria-label={`Show ${body.name}`}
+                    title={`${visibleIds.has(body.id) ? "Hide" : "Show"} ${body.name}`}
+                    style={{ color: body.color }}
+                  />
+                  <button
+                    className={`body-button ${hasMoons ? "has-moons" : ""} ${selectedIds.has(body.id) ? "selected" : ""}`}
+                    type="button"
+                    onClick={(event) => selectBody(body.id, event.metaKey || event.ctrlKey)}
+                    aria-pressed={selectedIds.has(body.id)}
+                  >
+                    <span>{body.name}</span>
+                  </button>
+                  {hasMoons && (
+                    <button
+                      className="moon-toggle"
+                      type="button"
+                      onClick={() => toggleMoonGroup(body.id)}
+                      aria-expanded={expanded}
+                      aria-controls={`${body.id}-moons`}
+                      aria-label={`${expanded ? "Collapse" : "Expand"} moons of ${body.name}`}
+                      title={`${expanded ? "Collapse" : "Expand"} moons`}
+                    >
+                      {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    </button>
+                  )}
+                </div>
+                {expanded && (
+                  <div className="moon-list" id={`${body.id}-moons`}>
+                    {moons.map((moon) => (
+                      <div className="body-control moon-control" key={moon.id}>
+                        <input
+                          className="body-visibility moon-visibility"
+                          type="checkbox"
+                          checked={visibleIds.has(moon.id)}
+                          onChange={() => toggleBodyVisibility(moon.id)}
+                          aria-label={`Show ${moon.name}`}
+                          title={`${visibleIds.has(moon.id) ? "Hide" : "Show"} ${moon.name}`}
+                          style={{ color: moon.color }}
+                        />
+                        <button
+                          className={`body-button moon-button ${selectedIds.has(moon.id) ? "selected" : ""}`}
+                          type="button"
+                          onClick={(event) => selectBody(moon.id, event.metaKey || event.ctrlKey)}
+                          aria-pressed={selectedIds.has(moon.id)}
+                        >
+                          <span>{moon.name}</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </aside>
 

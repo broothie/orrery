@@ -29,4 +29,18 @@ describe("calculateBodyStates", () => {
       );
     }
   });
+
+  it("places every moon near its parent", () => {
+    for (const moon of BODY_DEFINITIONS.filter((body) => body.parentId)) {
+      const moonState = states.find((body) => body.id === moon.id)!;
+      const parentState = states.find((body) => body.id === moon.parentId)!;
+      const separationKm = Math.hypot(
+        moonState.position[0] - parentState.position[0],
+        moonState.position[1] - parentState.position[1],
+        moonState.position[2] - parentState.position[2],
+      ) * KM_PER_RENDER_UNIT;
+      expect(separationKm).toBeGreaterThan(parentState.radiusKm);
+      expect(separationKm).toBeLessThan(11_000_000);
+    }
+  });
 });

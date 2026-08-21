@@ -6,7 +6,7 @@ no runtime backend or external data dependency.
 
 ## Features
 
-- True-scale body radii and heliocentric distances
+- True-scale body radii and distances, including 28 major planetary moons
 - Pan, orbit, and zoom controls across Solar System scales
 - Screen-space indicators for off-screen and sub-pixel bodies
 - Focused, camera-relative coordinates for close-up stability
@@ -51,6 +51,12 @@ Astronomy Engine heliocentric J2000 vectors are rotated into the J2000 ecliptic
 frame and mapped to a Y-up Three.js scene. One render unit equals one million
 kilometers. The scene is rebased around the focused body so nearby geometry
 remains stable even for outer planets.
+
+Earth's Moon is positioned by Astronomy Engine. Other moons use client-side
+Keplerian approximations based on JPL's published mean orbital elements. These
+are suitable for the orrery visualization, but not for predicting precise
+occultations or eclipse circumstances; that requires a numerical ephemeris such
+as JPL Horizons or SPICE.
 
 The star field uses a magnitude 7 subset of the HYG Stellar Database v4.0,
 converted to J2000 ecliptic directions and rendered as one GPU point cloud.

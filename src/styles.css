@@ -179,13 +179,24 @@ select:focus-visible {
   gap: 2px;
 }
 
+.body-group,
+.moon-list {
+  display: grid;
+  gap: 2px;
+}
+
+.body-control {
+  position: relative;
+  min-width: 0;
+}
+
 .body-button {
   width: 100%;
   min-height: 34px;
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 6px 8px;
+  padding: 6px 8px 6px 29px;
   color: #b7c0c8;
   background: transparent;
   border: 1px solid transparent;
@@ -205,15 +216,90 @@ select:focus-visible {
   border-color: var(--line);
 }
 
-.body-swatch {
-  flex: 0 0 auto;
+.body-button.has-moons {
+  padding-right: 30px;
+}
+
+.moon-toggle {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #79848d;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  transform: translateY(-50%);
+}
+
+.moon-toggle:hover {
+  color: #eef2f5;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.moon-button {
+  min-height: 29px;
+  color: #929da6;
+  font-size: 11px;
+}
+
+.moon-control {
+  margin-left: 16px;
+}
+
+.body-visibility {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 1px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  margin: -13px 0 0;
+  padding: 0;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.body-visibility::before {
+  width: 8px;
+  height: 8px;
+  content: "";
+  background: transparent;
+  border: 1px solid currentColor;
   border-radius: 50%;
+}
+
+.body-visibility:checked::before {
+  background: currentColor;
   box-shadow: inset -2px -2px 3px rgba(0, 0, 0, 0.35);
 }
 
-.body-swatch {
-  width: 9px;
-  height: 9px;
+.body-visibility:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.body-visibility:focus-visible {
+  outline: 2px solid #d9e5ed;
+  outline-offset: 2px;
+}
+
+.moon-visibility {
+  color: inherit;
+}
+
+.moon-visibility::before {
+  width: 6px;
+  height: 6px;
 }
 
 .indicator-layer {
@@ -405,7 +491,7 @@ select:focus-visible {
     bottom: 154px;
     left: 10px;
     width: auto;
-    height: 48px;
+    height: 82px;
     max-height: none;
     padding: 6px 8px;
     border: 1px solid var(--line);
@@ -423,11 +509,36 @@ select:focus-visible {
     gap: 3px;
   }
 
+  .body-group {
+    display: grid;
+    align-content: start;
+    flex: 0 0 auto;
+    gap: 2px;
+  }
+
+  .body-control {
+    flex: 0 0 auto;
+  }
+
+  .moon-list {
+    display: flex;
+    gap: 3px;
+    padding-left: 18px;
+  }
+
   .body-button {
     width: auto;
     min-height: 34px;
     flex: 0 0 auto;
-    padding: 6px 9px;
+    padding: 6px 9px 6px 29px;
+  }
+
+  .moon-control {
+    margin-left: 0;
+  }
+
+  .moon-button {
+    min-height: 34px;
   }
 
   .indicator-layer {

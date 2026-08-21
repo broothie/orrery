@@ -69,6 +69,7 @@ interface SolarSystemProps {
   bodies: BodyState[];
   focusedId: BodyId;
   selectedIds: ReadonlySet<BodyId>;
+  visibleIds: ReadonlySet<BodyId>;
   focusSequence: number;
   onSelect: (id: BodyId, additive?: boolean) => void;
   onIndicators: (indicators: BodyIndicator[]) => void;
@@ -78,8 +79,9 @@ function BodyMeshes({
   bodies,
   focusedId,
   selectedIds,
+  visibleIds,
   onSelect,
-}: Pick<SolarSystemProps, "bodies" | "focusedId" | "selectedIds" | "onSelect">) {
+}: Pick<SolarSystemProps, "bodies" | "focusedId" | "selectedIds" | "visibleIds" | "onSelect">) {
   const origin = bodies.find((body) => body.id === focusedId)!.position;
   const focused = bodies.find((body) => body.id === focusedId)!;
   const sun = bodies[0];
@@ -103,7 +105,7 @@ function BodyMeshes({
         distance={0}
       />
 
-      {bodies.map((body) => {
+      {bodies.filter((body) => visibleIds.has(body.id)).map((body) => {
         const position: [number, number, number] = [
           body.position[0] - origin[0],
           body.position[1] - origin[1],
@@ -244,10 +246,11 @@ function IndicatorBridge({
   bodies,
   focusedId,
   selectedIds,
+  visibleIds,
   onIndicators,
 }: Pick<
   SolarSystemProps,
-  "bodies" | "focusedId" | "selectedIds" | "onIndicators"
+  "bodies" | "focusedId" | "selectedIds" | "visibleIds" | "onIndicators"
 >) {
   const { camera, size } = useThree();
   const lastUpdate = useRef(0);
@@ -265,6 +268,7 @@ function IndicatorBridge({
     const fov = THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov);
 
     const projectedIndicators = bodies
+      .filter((body) => visibleIds.has(body.id))
       .map((body): ProjectedIndicator | null => {
         const world = new THREE.Vector3(
           body.position[0] - origin[0],
@@ -333,6 +337,7 @@ export function SolarSystem(props: SolarSystemProps) {
         bodies={props.bodies}
         focusedId={props.focusedId}
         selectedIds={props.selectedIds}
+        visibleIds={props.visibleIds}
         onSelect={props.onSelect}
       />
       <CameraRig
@@ -345,6 +350,7 @@ export function SolarSystem(props: SolarSystemProps) {
         bodies={props.bodies}
         focusedId={props.focusedId}
         selectedIds={props.selectedIds}
+        visibleIds={props.visibleIds}
         onIndicators={props.onIndicators}
       />
     </Canvas>

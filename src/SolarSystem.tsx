@@ -188,9 +188,8 @@ function BodyMeshes({
   focusedId,
   selectedIds,
   visibleIds,
-  focusSequence,
   onSelect,
-}: Pick<SolarSystemProps, "bodies" | "focusedId" | "selectedIds" | "visibleIds" | "focusSequence" | "onSelect">) {
+}: Pick<SolarSystemProps, "bodies" | "focusedId" | "selectedIds" | "visibleIds" | "onSelect">) {
   const origin = bodies.find((body) => body.id === focusedId)!.position;
   const focused = bodies.find((body) => body.id === focusedId)!;
   const sun = bodies[0];
@@ -226,7 +225,7 @@ function BodyMeshes({
             body={body}
             position={position}
             selected={selectedIds.has(body.id)}
-            loadTexture={focusSequence > 0 && focusedId === body.id}
+            loadTexture={selectedIds.has(body.id)}
             onSelect={onSelect}
           />
         );
@@ -506,7 +505,6 @@ export function SolarSystem(props: SolarSystemProps) {
         focusedId={props.focusedId}
         selectedIds={props.selectedIds}
         visibleIds={props.visibleIds}
-        focusSequence={props.focusSequence}
         onSelect={props.onSelect}
       />
       <CameraRig

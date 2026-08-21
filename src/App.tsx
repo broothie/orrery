@@ -159,19 +159,18 @@ export function App() {
             aria-label={`Focus ${indicator.name}`}
           >
             <span
-              className="indicator-arrow-wrap"
-              style={{
-                color: indicator.color,
-                transform: `rotate(${indicator.angle}deg)`,
-              }}
+              className="indicator-reticle"
+              style={{ borderColor: indicator.color }}
               aria-hidden="true"
+            />
+            <span
+              className="indicator-label"
+              style={{
+                transform: `translateY(calc(-50% + ${indicator.labelOffsetY}px))`,
+              }}
             >
-              <svg className="indicator-arrow" viewBox="0 0 32 36">
-                <path d="M16 2 L16 30" />
-                <path d="M11 25 L16 30 L21 25" />
-              </svg>
+              {indicator.name}
             </span>
-            <span className="indicator-label">{indicator.name}</span>
           </button>
         ))}
       </div>

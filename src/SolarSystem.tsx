@@ -11,11 +11,11 @@ export interface BodyIndicator {
   color: string;
   x: number;
   y: number;
-  angle: number;
+  labelOffsetY: number;
   selected: boolean;
 }
 
-interface ProjectedIndicator extends Omit<BodyIndicator, "x" | "y" | "angle"> {
+interface ProjectedIndicator extends Omit<BodyIndicator, "x" | "y" | "labelOffsetY"> {
   targetX: number;
   targetY: number;
   width: number;
@@ -23,58 +23,43 @@ interface ProjectedIndicator extends Omit<BodyIndicator, "x" | "y" | "angle"> {
 
 function crowdIndicators(
   projected: ProjectedIndicator[],
-  width: number,
-  leftInset: number,
+  height: number,
   topInset: number,
+  bottomInset: number,
 ) {
-  const calloutHeight = 50;
-  const horizontalGap = 8;
-  const verticalGap = 6;
-  const minY = topInset + calloutHeight / 2 + 8;
-  const occupied: Array<{ x: number; y: number; width: number }> = [];
-  const slotOrder = [0, -1, 1, -2, 2, -3, 3, -4, 4];
+  const labelHeight = 18;
+  const horizontalGap = 6;
+  const minY = topInset + labelHeight / 2 + 8;
+  const maxY = height - bottomInset - labelHeight / 2 - 8;
+  const occupied: Array<{ left: number; right: number; y: number }> = [];
+  const offsetOrder = Array.from({ length: 17 }, (_, index) => {
+    if (index === 0) return 0;
+    const distance = Math.ceil(index / 2) * (labelHeight + 3);
+    return index % 2 === 1 ? -distance : distance;
+  });
 
   return [...projected]
     .sort((a, b) => a.targetY - b.targetY || a.targetX - b.targetX)
     .map((indicator): BodyIndicator => {
-      const desiredY = indicator.targetY - 28;
-      let placement: { x: number; y: number } | undefined;
-
-      for (let row = 0; row < 5 && !placement; row += 1) {
-        const y = Math.max(minY, desiredY - row * (calloutHeight + verticalGap));
-        for (const slot of slotOrder) {
-          const x = THREE.MathUtils.clamp(
-            indicator.targetX + slot * (indicator.width + horizontalGap),
-            leftInset + indicator.width / 2 + 10,
-            width - indicator.width / 2 - 10,
-          );
-          const overlaps = occupied.some((item) =>
-            Math.abs(item.x - x) < (item.width + indicator.width) / 2 + horizontalGap
-            && Math.abs(item.y - y) < calloutHeight + verticalGap,
-          );
-          if (!overlaps) {
-            placement = { x, y };
-            break;
-          }
-        }
-      }
-
-      const x = placement?.x ?? THREE.MathUtils.clamp(
-        indicator.targetX,
-        leftInset + indicator.width / 2 + 10,
-        width - indicator.width / 2 - 10,
-      );
-      const y = placement?.y ?? Math.max(minY, desiredY);
-      occupied.push({ x, y, width: indicator.width });
+      const labelLeft = indicator.targetX + 12;
+      const labelRight = labelLeft + indicator.width;
+      const labelY = offsetOrder
+        .map((offset) => THREE.MathUtils.clamp(indicator.targetY + offset, minY, maxY))
+        .find((candidateY) => !occupied.some((item) =>
+          labelLeft < item.right + horizontalGap
+          && labelRight + horizontalGap > item.left
+          && Math.abs(candidateY - item.y) < labelHeight + 3,
+        )) ?? THREE.MathUtils.clamp(indicator.targetY, minY, maxY);
+      occupied.push({ left: labelLeft, right: labelRight, y: labelY });
 
       return {
         id: indicator.id,
         name: indicator.name,
         color: indicator.color,
         selected: indicator.selected,
-        x,
-        y,
-        angle: Math.atan2(indicator.targetY - y, indicator.targetX - x) * (180 / Math.PI) - 90,
+        x: indicator.targetX,
+        y: indicator.targetY,
+        labelOffsetY: labelY - indicator.targetY,
       };
     });
 }
@@ -275,7 +260,7 @@ function IndicatorBridge({
     const leftInset = compact ? 0 : 154;
     const topInset = compact ? 60 : 68;
     const bottomInset = compact ? 180 : 92;
-    const margin = 46;
+    const margin = 72;
     const fov = THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov);
 
     const projectedIndicators = bodies
@@ -312,7 +297,7 @@ function IndicatorBridge({
           color: body.color,
           targetX: screenX,
           targetY: screenY,
-          width: 42 + body.name.length * 6,
+          width: 12 + body.name.length * 6,
           selected: selectedIds.has(body.id),
         };
       })
@@ -320,9 +305,9 @@ function IndicatorBridge({
 
     onIndicators(crowdIndicators(
       projectedIndicators,
-      size.width,
-      leftInset,
+      size.height,
       topInset,
+      bottomInset,
     ));
   });
 

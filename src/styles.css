@@ -226,17 +226,16 @@ select:focus-visible {
 
 .body-indicator {
   position: absolute;
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: center;
-  gap: 0;
-  min-width: 0;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
   padding: 0;
   color: #e8ecef;
   background: transparent;
   border: 0;
   border-radius: 0;
-  font-size: 13px;
+  font-size: 11px;
   white-space: nowrap;
   transform: translate(-50%, -50%);
   pointer-events: auto;
@@ -246,28 +245,18 @@ select:focus-visible {
   color: #fff;
 }
 
-.indicator-arrow-wrap {
-  position: relative;
-  width: 28px;
-  height: 32px;
-  flex: 0 0 auto;
-  transform-origin: center;
-}
-
-.indicator-arrow {
-  width: 28px;
-  height: 32px;
-  display: block;
-  overflow: visible;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.45;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  filter: drop-shadow(0 1px 2px #000);
+.indicator-reticle {
+  width: 8px;
+  height: 8px;
+  border: 1px solid;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.72);
 }
 
 .indicator-label {
+  position: absolute;
+  top: 50%;
+  left: 14px;
   color: #e8ecef;
   line-height: 18px;
   text-shadow:
@@ -282,6 +271,13 @@ select:focus-visible {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
+}
+
+.body-indicator.selected .indicator-reticle {
+  border-width: 2px;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.8),
+    0 0 0 3px rgba(255, 255, 255, 0.28);
 }
 
 .time-console {

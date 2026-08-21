@@ -246,6 +246,7 @@ function CameraRig({
   const controls = useRef<OrbitControlsImpl>(null);
   const { camera } = useThree();
   const initialized = useRef(false);
+  const lastFitSequence = useRef(0);
   const isGroupSelection = selectedIds.size > 1;
 
   useEffect(() => {
@@ -286,6 +287,19 @@ function CameraRig({
       }),
     );
     const currentTarget = controls.current?.target ?? new THREE.Vector3();
+    const minDistance = Math.max(radius * 1.08, 1e-7);
+
+    if (lastFitSequence.current === focusSequence) {
+      camera.position.add(center.clone().sub(currentTarget));
+      controls.current?.target.copy(center);
+      if (controls.current) {
+        controls.current.minDistance = minDistance;
+        controls.current.update();
+      }
+      return;
+    }
+
+    lastFitSequence.current = focusSequence;
     const direction = camera.position.clone().sub(currentTarget).normalize();
     if (direction.lengthSq() === 0) direction.set(0.35, 0.22, 1);
     const perspectiveCamera = camera as THREE.PerspectiveCamera;
@@ -303,7 +317,7 @@ function CameraRig({
     camera.updateProjectionMatrix();
     controls.current?.target.copy(center);
     if (controls.current) {
-      controls.current.minDistance = Math.max(radius * 1.08, 1e-7);
+      controls.current.minDistance = minDistance;
       controls.current.update();
     }
   }, [bodies, camera, focusSequence, focusedId, isGroupSelection, selectedIds]);
@@ -315,7 +329,7 @@ function CameraRig({
       enableDamping
       dampingFactor={0.08}
       enablePan={!isGroupSelection}
-      enableZoom={!isGroupSelection}
+      enableZoom
       screenSpacePanning
       mouseButtons={{
         LEFT: THREE.MOUSE.ROTATE,

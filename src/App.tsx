@@ -191,7 +191,7 @@ export function App() {
       <header className="topbar">
         <div className="brand-block">
           <div className="brand-mark" aria-hidden="true">
-            <span />
+            {Array.from({ length: 9 }, (_, index) => <span key={index} />)}
           </div>
           <div>
             <h1>Orrery</h1>

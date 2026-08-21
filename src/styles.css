@@ -92,28 +92,75 @@ select:focus-visible {
   position: relative;
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(255, 209, 102, 0.55);
-  border-radius: 50%;
-}
-
-.brand-mark::before,
-.brand-mark::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  border: 1px solid rgba(120, 205, 209, 0.5);
 }
 
 .brand-mark::before {
-  inset: 6px -5px;
-  transform: rotate(-26deg);
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(255, 209, 102, 0.72);
+  transform: translate(-50%, -50%);
 }
 
-.brand-mark::after {
-  inset: 11px;
-  background: var(--accent);
-  border: 0;
-  box-shadow: 0 0 12px rgba(255, 209, 102, 0.7);
+.brand-mark span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-12px);
+}
+
+.brand-mark span:nth-child(1) {
+  --angle: 0deg;
+  background: #a7a7a4;
+}
+
+.brand-mark span:nth-child(2) {
+  --angle: 40deg;
+  background: #dba866;
+}
+
+.brand-mark span:nth-child(3) {
+  --angle: 80deg;
+  background: #4d82dc;
+}
+
+.brand-mark span:nth-child(4) {
+  --angle: 120deg;
+  background: #c75c43;
+}
+
+.brand-mark span:nth-child(5) {
+  --angle: 160deg;
+  background: #d6ae83;
+}
+
+.brand-mark span:nth-child(6) {
+  --angle: 200deg;
+  background: #dfc98f;
+}
+
+.brand-mark span:nth-child(7) {
+  --angle: 240deg;
+  background: #78cdd1;
+}
+
+.brand-mark span:nth-child(8) {
+  --angle: 280deg;
+  background: #4569cf;
+}
+
+.brand-mark span:nth-child(9) {
+  --angle: 320deg;
+  background: #b8a58d;
 }
 
 .brand-block h1 {

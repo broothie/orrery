@@ -132,7 +132,7 @@ select:focus-visible {
   font-size: 11px;
 }
 
-.attributions-link {
+.header-link {
   padding: 6px 0;
   color: var(--muted);
   background: transparent;
@@ -143,7 +143,7 @@ select:focus-visible {
   text-underline-offset: 3px;
 }
 
-.attributions-link:hover {
+.header-link:hover {
   color: #f3f5f7;
   text-decoration-color: currentColor;
 }
@@ -158,7 +158,7 @@ select:focus-visible {
   background: rgba(0, 0, 0, 0.68);
 }
 
-.attributions-modal {
+.info-modal {
   width: min(440px, 100%);
   color: #f3f5f7;
   background: var(--panel-strong);
@@ -178,7 +178,8 @@ select:focus-visible {
 
 .modal-heading h2,
 .attribution-entry h3,
-.attribution-entry p {
+.attribution-entry p,
+.controls-list {
   margin: 0;
 }
 
@@ -238,6 +239,82 @@ select:focus-visible {
 
 .attribution-links a:hover {
   color: #a9e7e9;
+}
+
+.controls-card {
+  position: fixed;
+  z-index: 18;
+  top: 86px;
+  right: 18px;
+  width: 310px;
+  max-height: calc(100vh - 194px);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.controls-card-heading {
+  width: 100%;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  padding: 0 12px 0 14px;
+  color: #edf1f4;
+  background: transparent;
+  border: 0;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.controls-card-heading:hover {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.controls-card-heading svg {
+  color: var(--muted);
+}
+
+.controls-list {
+  min-height: 0;
+  padding: 6px 18px 10px;
+  overflow-y: auto;
+}
+
+.controls-list > div {
+  display: grid;
+  grid-template-columns: 126px minmax(0, 1fr);
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.controls-list > div:last-child {
+  border-bottom: 0;
+}
+
+.controls-list dt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #edf1f4;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.controls-list dt svg {
+  color: var(--focus);
+}
+
+.controls-list dd {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .icon-button,
@@ -598,6 +675,13 @@ select:focus-visible {
   .brand-mark {
     width: 30px;
     height: 30px;
+  }
+
+  .controls-card {
+    top: 72px;
+    right: 10px;
+    width: min(310px, calc(100vw - 20px));
+    max-height: calc(100vh - 318px);
   }
 
   .body-rail {

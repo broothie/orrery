@@ -4,11 +4,15 @@ import {
   ChevronRight,
   ExternalLink,
   Gauge,
+  Command,
+  MousePointer2,
+  Move,
   Pause,
   Play,
   RotateCcw,
   RotateCw,
   X,
+  ZoomIn,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -65,6 +69,7 @@ export function App() {
   const [focusSequence, setFocusSequence] = useState(0);
   const [indicators, setIndicators] = useState<BodyIndicator[]>([]);
   const [attributionsOpen, setAttributionsOpen] = useState(false);
+  const [controlsExpanded, setControlsExpanded] = useState(true);
   const lastTick = useRef(0);
 
   const bodies = useMemo(
@@ -194,13 +199,53 @@ export function App() {
           </div>
         </div>
         <button
-          className="attributions-link"
+          className="header-link"
           type="button"
           onClick={() => setAttributionsOpen(true)}
         >
           Attributions
         </button>
       </header>
+
+      <aside
+        className={`controls-card ${controlsExpanded ? "expanded" : ""}`}
+        aria-label="Controls"
+      >
+        <button
+          className="controls-card-heading"
+          type="button"
+          onClick={() => setControlsExpanded((expanded) => !expanded)}
+          aria-expanded={controlsExpanded}
+          aria-controls="controls-list"
+        >
+          <span>Controls</span>
+          {controlsExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </button>
+        {controlsExpanded && (
+          <dl className="controls-list" id="controls-list">
+            <div>
+              <dt><MousePointer2 size={17} /><span>Select</span></dt>
+              <dd>Click or tap a body. Click the final selection again to clear it.</dd>
+            </div>
+            <div>
+              <dt><RotateCw size={17} /><span>Rotate</span></dt>
+              <dd>Left drag or one-finger drag.</dd>
+            </div>
+            <div>
+              <dt><Move size={17} /><span>Pan</span></dt>
+              <dd>Right drag. Panning clears the current selection.</dd>
+            </div>
+            <div>
+              <dt><ZoomIn size={17} /><span>Zoom</span></dt>
+              <dd>Scroll or pinch.</dd>
+            </div>
+            <div>
+              <dt><Command size={17} /><span>Multi-select</span></dt>
+              <dd>Command or Control + click.</dd>
+            </div>
+          </dl>
+        )}
+      </aside>
 
       {attributionsOpen && (
         <div
@@ -211,7 +256,7 @@ export function App() {
           }}
         >
           <section
-            className="attributions-modal"
+            className="info-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="attributions-title"

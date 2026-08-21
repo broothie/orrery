@@ -12,13 +12,16 @@ export interface BodyIndicator {
   color: string;
   x: number;
   y: number;
+  labelOffsetX: number;
   labelOffsetY: number;
   selected: boolean;
+  showReticle: boolean;
 }
 
-interface ProjectedIndicator extends Omit<BodyIndicator, "x" | "y" | "labelOffsetY"> {
+interface ProjectedIndicator extends Omit<BodyIndicator, "x" | "y" | "labelOffsetX" | "labelOffsetY"> {
   targetX: number;
   targetY: number;
+  labelLeft: number;
   width: number;
 }
 
@@ -42,24 +45,25 @@ function crowdIndicators(
   return [...projected]
     .sort((a, b) => a.targetY - b.targetY || a.targetX - b.targetX)
     .map((indicator): BodyIndicator => {
-      const labelLeft = indicator.targetX + 12;
-      const labelRight = labelLeft + indicator.width;
+      const labelRight = indicator.labelLeft + indicator.width;
       const labelY = offsetOrder
         .map((offset) => THREE.MathUtils.clamp(indicator.targetY + offset, minY, maxY))
         .find((candidateY) => !occupied.some((item) =>
-          labelLeft < item.right + horizontalGap
+          indicator.labelLeft < item.right + horizontalGap
           && labelRight + horizontalGap > item.left
           && Math.abs(candidateY - item.y) < labelHeight + 3,
         )) ?? THREE.MathUtils.clamp(indicator.targetY, minY, maxY);
-      occupied.push({ left: labelLeft, right: labelRight, y: labelY });
+      occupied.push({ left: indicator.labelLeft, right: labelRight, y: labelY });
 
       return {
         id: indicator.id,
         name: indicator.name,
         color: indicator.color,
         selected: indicator.selected,
+        showReticle: indicator.showReticle,
         x: indicator.targetX,
         y: indicator.targetY,
+        labelOffsetX: indicator.labelLeft - indicator.targetX,
         labelOffsetY: labelY - indicator.targetY,
       };
     });
@@ -169,6 +173,7 @@ function CameraRig({
 
     const origin = bodies.find((body) => body.id === focusedId)!.position;
     const selectedBodies = bodies.filter((body) => selectedIds.has(body.id));
+    if (selectedBodies.length === 0) return;
     const bounds = new THREE.Box3();
     selectedBodies.forEach((body) => {
       const position = new THREE.Vector3(
@@ -264,7 +269,6 @@ function IndicatorBridge({
     const leftInset = compact ? 0 : 154;
     const topInset = compact ? 60 : 68;
     const bottomInset = compact ? 180 : 92;
-    const margin = 72;
     const fov = THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov);
 
     const projectedIndicators = bodies
@@ -287,14 +291,27 @@ function IndicatorBridge({
         const screenY = (-projected.y * 0.5 + 0.5) * size.height;
         if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) return null;
 
+        const visibleRadius = Math.max(pixelRadius, 0);
         const offscreen =
           behind ||
-          screenX < leftInset + margin ||
-          screenX > size.width - margin ||
-          screenY < topInset + margin ||
-          screenY > size.height - bottomInset - margin;
+          screenX + visibleRadius < leftInset ||
+          screenX - visibleRadius > size.width ||
+          screenY + visibleRadius < topInset ||
+          screenY - visibleRadius > size.height - bottomInset;
         const tooSmall = pixelRadius < 3.5;
-        if (offscreen || !tooSmall) return null;
+        if (offscreen) return null;
+
+        const labelWidth = 12 + body.name.length * 6;
+        const labelGap = Math.max(pixelRadius, 4) + (tooSmall ? 10 : 16);
+        const rightLabelLeft = screenX + labelGap;
+        const leftLabelLeft = screenX - labelGap - labelWidth;
+        const minLabelLeft = leftInset + 8;
+        const maxLabelLeft = size.width - labelWidth - 8;
+        const labelLeft = rightLabelLeft <= maxLabelLeft
+          ? rightLabelLeft
+          : leftLabelLeft >= minLabelLeft
+            ? leftLabelLeft
+            : THREE.MathUtils.clamp(rightLabelLeft, minLabelLeft, maxLabelLeft);
 
         return {
           id: body.id,
@@ -302,8 +319,10 @@ function IndicatorBridge({
           color: body.color,
           targetX: screenX,
           targetY: screenY,
-          width: 12 + body.name.length * 6,
+          labelLeft,
+          width: labelWidth,
           selected: selectedIds.has(body.id),
+          showReticle: tooSmall,
         };
       })
       .filter((item): item is ProjectedIndicator => item !== null);

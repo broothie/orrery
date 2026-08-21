@@ -102,7 +102,7 @@ export function App() {
     if (additive) {
       setSelectedIds((current) => {
         const next = new Set(current);
-        if (next.has(id) && next.size > 1) {
+        if (next.has(id)) {
           next.delete(id);
         } else {
           next.add(id);
@@ -167,6 +167,7 @@ export function App() {
           </div>
           <div>
             <h1>Orrery</h1>
+            <p>To-scale Solar System</p>
           </div>
         </div>
 
@@ -246,7 +247,25 @@ export function App() {
         </div>
       </aside>
 
-      <div className="indicator-layer" aria-label="Body indicators">
+      <div
+        className="indicator-layer"
+        aria-label="Body indicators"
+        onWheel={(event) => {
+          const canvas = event.currentTarget.parentElement?.querySelector("canvas");
+          if (!canvas) return;
+          event.preventDefault();
+          canvas.dispatchEvent(new WheelEvent("wheel", {
+            bubbles: true,
+            cancelable: true,
+            clientX: event.clientX,
+            clientY: event.clientY,
+            deltaMode: event.deltaMode,
+            deltaX: event.deltaX,
+            deltaY: event.deltaY,
+            deltaZ: event.deltaZ,
+          }));
+        }}
+      >
         {indicators.map((indicator) => (
           <button
             key={indicator.id}
@@ -259,14 +278,17 @@ export function App() {
             title={`Focus ${indicator.name}`}
             aria-label={`Focus ${indicator.name}`}
           >
-            <span
-              className="indicator-reticle"
-              style={{ borderColor: indicator.color }}
-              aria-hidden="true"
-            />
+            {indicator.showReticle && (
+              <span
+                className="indicator-reticle"
+                style={{ borderColor: indicator.color }}
+                aria-hidden="true"
+              />
+            )}
             <span
               className="indicator-label"
               style={{
+                left: indicator.labelOffsetX,
                 transform: `translateY(calc(-50% + ${indicator.labelOffsetY}px))`,
               }}
             >

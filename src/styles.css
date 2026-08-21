@@ -126,6 +126,12 @@ select:focus-visible {
   line-height: 19px;
 }
 
+.brand-block p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .icon-button,
 .primary-icon-button {
   width: 36px;
@@ -324,7 +330,7 @@ select:focus-visible {
   font-size: 11px;
   white-space: nowrap;
   transform: translate(-50%, -50%);
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .body-indicator:hover {
@@ -337,17 +343,18 @@ select:focus-visible {
   border: 1px solid;
   border-radius: 50%;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.72);
+  pointer-events: auto;
 }
 
 .indicator-label {
   position: absolute;
   top: 50%;
-  left: 14px;
   color: #e8ecef;
   line-height: 18px;
   text-shadow:
     0 1px 2px #000,
     0 0 4px #000;
+  pointer-events: auto;
 }
 
 .body-indicator:hover .indicator-label,

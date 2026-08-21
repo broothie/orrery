@@ -2,6 +2,7 @@ import {
   Body,
   HelioVector,
   MakeTime,
+  RotationAxis,
   RotateVector,
   Rotation_EQJ_ECL,
   Vector,
@@ -92,6 +93,7 @@ interface MoonDefinition extends BodyDefinition {
 
 export interface BodyState extends BodyDefinition {
   position: [number, number, number];
+  orientation: [number, number, number, number];
   distanceFromSunAU: number;
   radiusUnits: number;
 }
@@ -173,6 +175,96 @@ function toScenePosition(vector: { x: number; y: number; z: number }): [number, 
   ];
 }
 
+function toSceneDirection(vector: Vector): [number, number, number] {
+  const ecliptic = RotateVector(eclipticRotation, vector);
+  return [ecliptic.x, ecliptic.z, -ecliptic.y];
+}
+
+// Convert an orthonormal scene basis to Three's [x, y, z, w] quaternion format.
+function quaternionFromBasis(
+  xAxis: [number, number, number],
+  yAxis: [number, number, number],
+  zAxis: [number, number, number],
+): [number, number, number, number] {
+  const m11 = xAxis[0];
+  const m12 = yAxis[0];
+  const m13 = zAxis[0];
+  const m21 = xAxis[1];
+  const m22 = yAxis[1];
+  const m23 = zAxis[1];
+  const m31 = xAxis[2];
+  const m32 = yAxis[2];
+  const m33 = zAxis[2];
+  const trace = m11 + m22 + m33;
+  let x: number;
+  let y: number;
+  let z: number;
+  let w: number;
+
+  if (trace > 0) {
+    const scale = 2 * Math.sqrt(trace + 1);
+    x = (m32 - m23) / scale;
+    y = (m13 - m31) / scale;
+    z = (m21 - m12) / scale;
+    w = scale / 4;
+  } else if (m11 > m22 && m11 > m33) {
+    const scale = 2 * Math.sqrt(1 + m11 - m22 - m33);
+    x = scale / 4;
+    y = (m12 + m21) / scale;
+    z = (m13 + m31) / scale;
+    w = (m32 - m23) / scale;
+  } else if (m22 > m33) {
+    const scale = 2 * Math.sqrt(1 + m22 - m11 - m33);
+    x = (m12 + m21) / scale;
+    y = scale / 4;
+    z = (m23 + m32) / scale;
+    w = (m13 - m31) / scale;
+  } else {
+    const scale = 2 * Math.sqrt(1 + m33 - m11 - m22);
+    x = (m13 + m31) / scale;
+    y = (m23 + m32) / scale;
+    z = scale / 4;
+    w = (m21 - m12) / scale;
+  }
+
+  const length = Math.hypot(x, y, z, w);
+  return [x / length, y / length, z / length, w / length];
+}
+
+function calculateBodyOrientation(body: Body, date: Date): [number, number, number, number] {
+  const axis = RotationAxis(body, date);
+  const time = MakeTime(date);
+  const rightAscension = axis.ra * 15 * DEG_TO_RAD;
+  const spin = axis.spin * DEG_TO_RAD;
+  const reference = new Vector(
+    -Math.sin(rightAscension),
+    Math.cos(rightAscension),
+    0,
+    time,
+  );
+  const east = new Vector(
+    axis.north.y * reference.z - axis.north.z * reference.y,
+    axis.north.z * reference.x - axis.north.x * reference.z,
+    axis.north.x * reference.y - axis.north.y * reference.x,
+    time,
+  );
+  const primeMeridian = new Vector(
+    reference.x * Math.cos(spin) + east.x * Math.sin(spin),
+    reference.y * Math.cos(spin) + east.y * Math.sin(spin),
+    reference.z * Math.cos(spin) + east.z * Math.sin(spin),
+    time,
+  );
+  // SphereGeometry maps its north pole to +Y and texture longitude zero to +X.
+  const xAxis = toSceneDirection(primeMeridian);
+  const yAxis = toSceneDirection(axis.north);
+  const zAxis: [number, number, number] = [
+    xAxis[1] * yAxis[2] - xAxis[2] * yAxis[1],
+    xAxis[2] * yAxis[0] - xAxis[0] * yAxis[2],
+    xAxis[0] * yAxis[1] - xAxis[1] * yAxis[0],
+  ];
+  return quaternionFromBasis(xAxis, yAxis, zAxis);
+}
+
 function solveEccentricAnomaly(meanAnomaly: number, eccentricity: number) {
   let eccentricAnomaly = meanAnomaly;
   for (let iteration = 0; iteration < 8; iteration += 1) {
@@ -228,6 +320,7 @@ export function calculateBodyStates(date: Date): BodyState[] {
     return {
       ...definition,
       position: toScenePosition(vector),
+      orientation: calculateBodyOrientation(definition.astronomyBody, date),
       distanceFromSunAU: Math.hypot(vector.x, vector.y, vector.z),
       radiusUnits: definition.radiusKm / KM_PER_RENDER_UNIT,
     };
@@ -251,6 +344,9 @@ export function calculateBodyStates(date: Date): BodyState[] {
     return {
       ...definition,
       position,
+      orientation: definition.astronomyBody
+        ? calculateBodyOrientation(definition.astronomyBody, date)
+        : [0, 0, 0, 1],
       distanceFromSunAU: Math.hypot(...position) / RENDER_UNITS_PER_AU,
       radiusUnits: definition.radiusKm / KM_PER_RENDER_UNIT,
     };

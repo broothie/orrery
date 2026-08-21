@@ -143,6 +143,7 @@ function BodyMesh({ body, position, selected, loadTexture, onSelect }: BodyMeshP
   return (
     <mesh
       position={position}
+      quaternion={body.orientation}
       onClick={(event) => {
         event.stopPropagation();
         onSelect(

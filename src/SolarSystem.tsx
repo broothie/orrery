@@ -1,9 +1,10 @@
-import { OrbitControls, Stars } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { BodyId, BodyState } from "./astronomy";
+import { StarField } from "./StarField";
 
 export interface BodyIndicator {
   id: BodyId;
@@ -327,7 +328,7 @@ export function SolarSystem(props: SolarSystemProps) {
     >
       <color attach="background" args={["#030508"]} />
       <fogExp2 attach="fog" args={["#030508", 0.000008]} />
-      <Stars radius={14_000} depth={7_000} count={4_500} factor={8} saturation={0.12} fade speed={0.15} />
+      <StarField />
       <BodyMeshes
         bodies={props.bodies}
         focusedId={props.focusedId}

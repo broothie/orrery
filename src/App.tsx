@@ -38,17 +38,21 @@ const PLAYBACK_RATES = [
 ];
 
 function toDateInputValue(timestamp: number) {
-  return new Date(timestamp).toISOString().slice(0, 16);
+  const date = new Date(timestamp);
+  const pad = (value: number) => String(value).padStart(2, "0");
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+    + `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 export function App() {
   const [timeMs, setTimeMs] = useState(() => Date.now());
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(true);
   const [playbackRate, setPlaybackRate] = useState(86_400);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [focusedId, setFocusedId] = useState<BodyId>("sun");
   const [selectedIds, setSelectedIds] = useState<Set<BodyId>>(
-    () => new Set(["sun"]),
+    () => new Set(["sun", "earth", "moon"]),
   );
   const [visibleIds, setVisibleIds] = useState<Set<BodyId>>(
     () => new Set([
@@ -66,7 +70,7 @@ export function App() {
         .map((body) => body.id),
     ),
   );
-  const [focusSequence, setFocusSequence] = useState(0);
+  const [focusSequence, setFocusSequence] = useState(1);
   const [indicators, setIndicators] = useState<BodyIndicator[]>([]);
   const [attributionsOpen, setAttributionsOpen] = useState(false);
   const [controlsExpanded, setControlsExpanded] = useState(true);
@@ -94,6 +98,7 @@ export function App() {
       return;
     }
 
+    lastTick.current = performance.now();
     let frame = 0;
     let lastRendered = 0;
     const tick = (now: number) => {
@@ -469,13 +474,13 @@ export function App() {
         </div>
 
         <div className="control-field date-field">
-          <label className="sr-only" htmlFor="simulation-date">UTC date and time</label>
+          <label className="sr-only" htmlFor="simulation-date">Local date and time</label>
           <input
             id="simulation-date"
             type="datetime-local"
             value={toDateInputValue(timeMs)}
             onChange={(event) => {
-              const next = Date.parse(`${event.target.value}Z`);
+              const next = new Date(event.target.value).getTime();
               if (Number.isFinite(next)) {
                 setPlaying(false);
                 setTimeMs(next);

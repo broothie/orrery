@@ -1,10 +1,23 @@
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, useTexture } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { BodyId, BodyState } from "./astronomy";
 import { StarField } from "./StarField";
+
+const BODY_TEXTURES: Partial<Record<BodyId, string>> = {
+  sun: "sun.jpg",
+  mercury: "mercury.jpg",
+  venus: "venus.jpg",
+  earth: "earth.jpg",
+  moon: "moon.jpg",
+  mars: "mars.jpg",
+  jupiter: "jupiter.jpg",
+  saturn: "saturn.jpg",
+  uranus: "uranus.jpg",
+  neptune: "neptune.jpg",
+};
 
 export interface BodyIndicator {
   id: BodyId;
@@ -79,13 +92,103 @@ interface SolarSystemProps {
   onIndicators: (indicators: BodyIndicator[]) => void;
 }
 
+interface BodyMeshProps {
+  body: BodyState;
+  position: [number, number, number];
+  selected: boolean;
+  loadTexture: boolean;
+  onSelect: SolarSystemProps["onSelect"];
+}
+
+interface BodyMaterialProps {
+  body: BodyState;
+  selected: boolean;
+  textureFile: string;
+}
+
+function BodyMaterial({ body, selected, textureFile }: BodyMaterialProps) {
+  const { gl } = useThree();
+  const isSun = body.id === "sun";
+  const texture = useTexture(`${import.meta.env.BASE_URL}textures/${textureFile}`);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.anisotropy = Math.min(4, gl.capabilities.getMaxAnisotropy());
+
+  return (
+    isSun ? (
+      <meshBasicMaterial
+        color={texture ? "#ffffff" : body.color}
+        map={texture ?? undefined}
+        toneMapped={false}
+      />
+    ) : (
+      <meshStandardMaterial
+        color={texture ? "#b0b0b0" : body.color}
+        map={texture ?? undefined}
+        roughness={0.82}
+        metalness={0}
+        emissive={texture ? "#ffffff" : selected ? body.color : "#000000"}
+        emissiveMap={texture ?? undefined}
+        emissiveIntensity={texture ? 0.035 : selected ? 0.07 : 0}
+      />
+    )
+  );
+}
+
+function BodyMesh({ body, position, selected, loadTexture, onSelect }: BodyMeshProps) {
+  const detail = body.radiusUnits > 0.05 ? 48 : 28;
+  const textureFile = BODY_TEXTURES[body.id];
+  const isSun = body.id === "sun";
+
+  return (
+    <mesh
+      position={position}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect(
+          body.id,
+          event.nativeEvent.metaKey || event.nativeEvent.ctrlKey,
+        );
+      }}
+    >
+      <sphereGeometry args={[body.radiusUnits, detail, Math.max(16, detail / 2)]} />
+      {loadTexture && textureFile ? (
+        <Suspense fallback={isSun ? (
+          <meshBasicMaterial color={body.color} toneMapped={false} />
+        ) : (
+          <meshStandardMaterial
+            color={body.color}
+            roughness={0.82}
+            metalness={0}
+            emissive={selected ? body.color : "#000000"}
+            emissiveIntensity={selected ? 0.07 : 0}
+          />
+        )}>
+          <BodyMaterial body={body} selected={selected} textureFile={textureFile} />
+        </Suspense>
+      ) : isSun ? (
+        <meshBasicMaterial color={body.color} toneMapped={false} />
+      ) : (
+        <meshStandardMaterial
+          color={body.color}
+          roughness={0.82}
+          metalness={0}
+          emissive={selected ? body.color : "#000000"}
+          emissiveIntensity={selected ? 0.07 : 0}
+        />
+      )}
+    </mesh>
+  );
+}
+
 function BodyMeshes({
   bodies,
   focusedId,
   selectedIds,
   visibleIds,
+  focusSequence,
   onSelect,
-}: Pick<SolarSystemProps, "bodies" | "focusedId" | "selectedIds" | "visibleIds" | "onSelect">) {
+}: Pick<SolarSystemProps, "bodies" | "focusedId" | "selectedIds" | "visibleIds" | "focusSequence" | "onSelect">) {
   const origin = bodies.find((body) => body.id === focusedId)!.position;
   const focused = bodies.find((body) => body.id === focusedId)!;
   const sun = bodies[0];
@@ -115,35 +218,15 @@ function BodyMeshes({
           body.position[1] - origin[1],
           body.position[2] - origin[2],
         ];
-        const isSun = body.id === "sun";
-        const isSelected = selectedIds.has(body.id);
-        const detail = body.radiusUnits > 0.05 ? 48 : 28;
-
         return (
-          <mesh
+          <BodyMesh
             key={body.id}
+            body={body}
             position={position}
-            onClick={(event) => {
-              event.stopPropagation();
-              onSelect(
-                body.id,
-                event.nativeEvent.metaKey || event.nativeEvent.ctrlKey,
-              );
-            }}
-          >
-            <sphereGeometry args={[body.radiusUnits, detail, Math.max(16, detail / 2)]} />
-            {isSun ? (
-              <meshBasicMaterial color={body.color} toneMapped={false} />
-            ) : (
-              <meshStandardMaterial
-                color={body.color}
-                roughness={0.82}
-                metalness={0}
-                emissive={isSelected ? body.color : "#000000"}
-                emissiveIntensity={isSelected ? 0.07 : 0}
-              />
-            )}
-          </mesh>
+            selected={selectedIds.has(body.id)}
+            loadTexture={focusSequence > 0 && focusedId === body.id}
+            onSelect={onSelect}
+          />
         );
       })}
     </>
@@ -357,6 +440,7 @@ export function SolarSystem(props: SolarSystemProps) {
         focusedId={props.focusedId}
         selectedIds={props.selectedIds}
         visibleIds={props.visibleIds}
+        focusSequence={props.focusSequence}
         onSelect={props.onSelect}
       />
       <CameraRig

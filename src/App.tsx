@@ -2,11 +2,13 @@ import {
   CalendarClock,
   ChevronDown,
   ChevronRight,
+  ExternalLink,
   Gauge,
   Pause,
   Play,
   RotateCcw,
   RotateCw,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -62,6 +64,7 @@ export function App() {
   );
   const [focusSequence, setFocusSequence] = useState(0);
   const [indicators, setIndicators] = useState<BodyIndicator[]>([]);
+  const [attributionsOpen, setAttributionsOpen] = useState(false);
   const lastTick = useRef(0);
 
   const bodies = useMemo(
@@ -69,6 +72,16 @@ export function App() {
     [timeMs],
   );
   const scrubDays = (timeMs - J2000_MS) / DAY_MS;
+
+  useEffect(() => {
+    if (!attributionsOpen) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setAttributionsOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [attributionsOpen]);
 
   useEffect(() => {
     if (!playing) {
@@ -170,8 +183,68 @@ export function App() {
             <p>Interactive Solar System</p>
           </div>
         </div>
-
+        <button
+          className="attributions-link"
+          type="button"
+          onClick={() => setAttributionsOpen(true)}
+        >
+          Attributions
+        </button>
       </header>
+
+      {attributionsOpen && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setAttributionsOpen(false);
+          }}
+        >
+          <section
+            className="attributions-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="attributions-title"
+          >
+            <div className="modal-heading">
+              <h2 id="attributions-title">Attributions</h2>
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setAttributionsOpen(false)}
+                aria-label="Close attributions"
+                title="Close"
+                autoFocus
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="attribution-entry">
+              <h3>Planet textures</h3>
+              <p>
+                Adapted from textures by Solar System Scope / INOVE, based on
+                NASA elevation and imagery data. Files were resized for this project.
+              </p>
+              <div className="attribution-links">
+                <a
+                  href="https://www.solarsystemscope.com/textures/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Solar System Scope <ExternalLink size={13} aria-hidden="true" />
+                </a>
+                <a
+                  href="https://creativecommons.org/licenses/by/4.0/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  CC BY 4.0 <ExternalLink size={13} aria-hidden="true" />
+                </a>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
 
       <aside className="body-rail" aria-label="Celestial bodies">
         <div className="rail-heading">

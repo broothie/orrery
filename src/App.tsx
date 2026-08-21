@@ -1,7 +1,7 @@
 import {
+  ArrowRight,
   CalendarClock,
   Gauge,
-  LocateFixed,
   Pause,
   Play,
   RotateCcw,
@@ -32,18 +32,6 @@ const PLAYBACK_RATES = [
 
 function toDateInputValue(timestamp: number) {
   return new Date(timestamp).toISOString().slice(0, 16);
-}
-
-function formatUtc(timestamp: number) {
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: "UTC",
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(timestamp);
 }
 
 export function App() {
@@ -139,12 +127,10 @@ export function App() {
           </div>
           <div>
             <h1>Orrery</h1>
-            <p>True-scale Solar System</p>
           </div>
         </div>
 
         <div className="topbar-actions">
-          <span className="utc-readout">{formatUtc(timeMs)} UTC</span>
           <button
             className="icon-button"
             type="button"
@@ -192,8 +178,16 @@ export function App() {
             title={`Focus ${indicator.name}`}
             aria-label={`Focus ${indicator.name}`}
           >
-            <span className="indicator-reticle" style={{ borderColor: indicator.color }} />
-            <span>{indicator.name}</span>
+            <ArrowRight
+              className="indicator-arrow"
+              size={18}
+              style={{
+                color: indicator.color,
+                transform: `rotate(${indicator.angle}deg)`,
+              }}
+              aria-hidden="true"
+            />
+            <span className="indicator-label">{indicator.name}</span>
           </button>
         ))}
       </div>
@@ -218,15 +212,6 @@ export function App() {
           >
             {direction === 1 ? <RotateCcw size={18} /> : <RotateCw size={18} />}
           </button>
-          <button
-            className="icon-button"
-            type="button"
-            onClick={() => setTimeMs(Date.now())}
-            title="Set current time"
-            aria-label="Set current time"
-          >
-            <LocateFixed size={18} />
-          </button>
         </div>
 
         <div className="scrubber">
@@ -249,10 +234,10 @@ export function App() {
           />
         </div>
 
-        <label className="control-field date-field">
-          <CalendarClock size={16} aria-hidden="true" />
-          <span className="sr-only">UTC date and time</span>
+        <div className="control-field date-field">
+          <label className="sr-only" htmlFor="simulation-date">UTC date and time</label>
           <input
+            id="simulation-date"
             type="datetime-local"
             value={toDateInputValue(timeMs)}
             onChange={(event) => {
@@ -263,7 +248,19 @@ export function App() {
               }
             }}
           />
-        </label>
+          <button
+            className="date-now-button"
+            type="button"
+            onClick={() => {
+              setPlaying(false);
+              setTimeMs(Date.now());
+            }}
+            title="Set time to now"
+            aria-label="Set time to now"
+          >
+            <CalendarClock size={16} />
+          </button>
+        </div>
 
         <label className="control-field rate-field">
           <Gauge size={16} aria-hidden="true" />

@@ -127,21 +127,8 @@ select:focus-visible {
   line-height: 19px;
 }
 
-.brand-block p {
-  margin: 2px 0 0;
-  color: var(--muted);
-  font-size: 11px;
-}
-
 .topbar-actions {
   gap: 10px;
-}
-
-.utc-readout {
-  color: #c5ccd3;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
 }
 
 .icon-button,
@@ -246,7 +233,7 @@ select:focus-visible {
   position: absolute;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
   padding: 4px 6px;
   color: #e8ecef;
@@ -265,46 +252,20 @@ select:focus-visible {
   border-color: var(--line-strong);
 }
 
-.body-indicator.onscreen {
-  width: 22px;
-  height: 22px;
-  justify-content: center;
-  padding: 0;
-  background: transparent;
-  border-color: transparent;
-  text-shadow: 0 1px 3px #000;
+.indicator-arrow {
+  flex: 0 0 auto;
+  filter: drop-shadow(0 1px 2px #000);
 }
 
-.body-indicator.onscreen > span:last-child {
-  position: absolute;
-  left: 22px;
-  padding: 3px 5px;
+.indicator-label {
   color: #e8ecef;
-  background: rgba(3, 5, 8, 0.9);
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  opacity: 0;
-  pointer-events: none;
+  text-shadow: 0 1px 2px #000;
 }
 
-.body-indicator.onscreen:hover > span:last-child,
-.body-indicator.onscreen:focus-visible > span:last-child {
-  opacity: 1;
-}
-
-.indicator-reticle {
-  width: 11px;
-  height: 11px;
-  border: 1px solid;
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.7);
-}
-
-.body-indicator.selected .indicator-reticle {
-  border-width: 2px;
-  box-shadow:
-    0 0 0 2px rgba(0, 0, 0, 0.8),
-    0 0 0 4px rgba(255, 255, 255, 0.32);
+.body-indicator.selected {
+  color: #fff;
+  background: rgba(24, 29, 35, 0.96);
+  border-color: rgba(255, 255, 255, 0.38);
 }
 
 .time-console {
@@ -381,6 +342,28 @@ select:focus-visible {
   color: #111;
 }
 
+.date-field {
+  padding-right: 4px;
+}
+
+.date-now-button {
+  width: 29px;
+  height: 29px;
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  color: #dbe0e5;
+  background: rgba(255, 255, 255, 0.055);
+  border: 0;
+  border-left: 1px solid var(--line);
+}
+
+.date-now-button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -402,11 +385,6 @@ select:focus-visible {
   .brand-mark {
     width: 30px;
     height: 30px;
-  }
-
-  .brand-block p,
-  .utc-readout {
-    display: none;
   }
 
   .body-rail {
@@ -493,7 +471,7 @@ select:focus-visible {
   }
 
   .time-console {
-    grid-template-columns: 116px minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .playback-controls {
@@ -515,8 +493,12 @@ select:focus-visible {
   }
 
   .control-field input {
-    width: 105px;
+    width: 100%;
     font-size: 10px;
+  }
+
+  .date-now-button svg {
+    display: block;
   }
 }
 

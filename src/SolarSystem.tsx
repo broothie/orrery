@@ -11,7 +11,82 @@ export interface BodyIndicator {
   color: string;
   x: number;
   y: number;
+  angle: number;
   selected: boolean;
+}
+
+interface ProjectedIndicator extends Omit<BodyIndicator, "x" | "y" | "angle"> {
+  targetX: number;
+  targetY: number;
+  width: number;
+}
+
+function crowdIndicators(
+  projected: ProjectedIndicator[],
+  width: number,
+  height: number,
+  leftInset: number,
+  topInset: number,
+  bottomInset: number,
+) {
+  const centerX = (leftInset + width) / 2;
+  const minY = topInset + 16;
+  const maxY = height - bottomInset - 16;
+  const rowGap = 32;
+  const groups = new Map<"left" | "right", ProjectedIndicator[]>([
+    ["left", []],
+    ["right", []],
+  ]);
+
+  projected.forEach((indicator, index) => {
+    const nearCenter = Math.abs(indicator.targetX - centerX) < 54;
+    const side = nearCenter
+      ? index % 2 === 0 ? "left" : "right"
+      : indicator.targetX < centerX ? "left" : "right";
+    groups.get(side)!.push(indicator);
+  });
+
+  return (["left", "right"] as const).flatMap((side) => {
+    const group = groups.get(side)!.sort((a, b) => a.targetY - b.targetY);
+    const ys = group.map((indicator) =>
+      THREE.MathUtils.clamp(indicator.targetY, minY, maxY),
+    );
+
+    for (let index = 1; index < ys.length; index += 1) {
+      ys[index] = Math.max(ys[index], ys[index - 1] + rowGap);
+    }
+    for (let index = ys.length - 2; index >= 0; index -= 1) {
+      ys[index] = Math.min(ys[index], ys[index + 1] - rowGap);
+    }
+    if (ys.length && ys[0] < minY) {
+      const shift = minY - ys[0];
+      ys.forEach((_, index) => { ys[index] += shift; });
+    }
+    if (ys.length && ys[ys.length - 1] > maxY) {
+      const shift = ys[ys.length - 1] - maxY;
+      ys.forEach((_, index) => { ys[index] -= shift; });
+    }
+
+    return group.map((indicator, index): BodyIndicator => {
+      const offset = indicator.width / 2 + 25;
+      const x = THREE.MathUtils.clamp(
+        indicator.targetX + (side === "left" ? -offset : offset),
+        leftInset + indicator.width / 2 + 10,
+        width - indicator.width / 2 - 10,
+      );
+      const y = ys[index];
+
+      return {
+        id: indicator.id,
+        name: indicator.name,
+        color: indicator.color,
+        selected: indicator.selected,
+        x,
+        y,
+        angle: Math.atan2(indicator.targetY - y, indicator.targetX - x) * (180 / Math.PI),
+      };
+    });
+  });
 }
 
 interface SolarSystemProps {
@@ -150,6 +225,11 @@ function CameraRig({
       dampingFactor={0.08}
       enablePan
       screenSpacePanning
+      mouseButtons={{
+        LEFT: THREE.MOUSE.PAN,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.ROTATE,
+      }}
       zoomSpeed={1.35}
       panSpeed={0.8}
       rotateSpeed={0.55}
@@ -183,9 +263,8 @@ function IndicatorBridge({
     const margin = 46;
     const fov = THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov);
 
-    const indicators = bodies
-      .filter((body) => body.id !== focusedId)
-      .map((body): BodyIndicator | null => {
+    const projectedIndicators = bodies
+      .map((body): ProjectedIndicator | null => {
         const world = new THREE.Vector3(
           body.position[0] - origin[0],
           body.position[1] - origin[1],
@@ -216,14 +295,22 @@ function IndicatorBridge({
           id: body.id,
           name: body.name,
           color: body.color,
-          x: (projected.x * 0.5 + 0.5) * size.width,
-          y: (-projected.y * 0.5 + 0.5) * size.height,
+          targetX: screenX,
+          targetY: screenY,
+          width: 42 + body.name.length * 6,
           selected: selectedIds.has(body.id),
         };
       })
-      .filter((item): item is BodyIndicator => item !== null);
+      .filter((item): item is ProjectedIndicator => item !== null);
 
-    onIndicators(indicators);
+    onIndicators(crowdIndicators(
+      projectedIndicators,
+      size.width,
+      size.height,
+      leftInset,
+      topInset,
+      bottomInset,
+    ));
   });
 
   return null;

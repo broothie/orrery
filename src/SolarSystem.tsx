@@ -24,57 +24,48 @@ interface ProjectedIndicator extends Omit<BodyIndicator, "x" | "y" | "angle"> {
 function crowdIndicators(
   projected: ProjectedIndicator[],
   width: number,
-  height: number,
   leftInset: number,
   topInset: number,
-  bottomInset: number,
 ) {
-  const centerX = (leftInset + width) / 2;
-  const minY = topInset + 16;
-  const maxY = height - bottomInset - 16;
-  const rowGap = 32;
-  const groups = new Map<"left" | "right", ProjectedIndicator[]>([
-    ["left", []],
-    ["right", []],
-  ]);
+  const calloutHeight = 50;
+  const horizontalGap = 8;
+  const verticalGap = 6;
+  const minY = topInset + calloutHeight / 2 + 8;
+  const occupied: Array<{ x: number; y: number; width: number }> = [];
+  const slotOrder = [0, -1, 1, -2, 2, -3, 3, -4, 4];
 
-  projected.forEach((indicator, index) => {
-    const nearCenter = Math.abs(indicator.targetX - centerX) < 54;
-    const side = nearCenter
-      ? index % 2 === 0 ? "left" : "right"
-      : indicator.targetX < centerX ? "left" : "right";
-    groups.get(side)!.push(indicator);
-  });
+  return [...projected]
+    .sort((a, b) => a.targetY - b.targetY || a.targetX - b.targetX)
+    .map((indicator): BodyIndicator => {
+      const desiredY = indicator.targetY - 28;
+      let placement: { x: number; y: number } | undefined;
 
-  return (["left", "right"] as const).flatMap((side) => {
-    const group = groups.get(side)!.sort((a, b) => a.targetY - b.targetY);
-    const ys = group.map((indicator) =>
-      THREE.MathUtils.clamp(indicator.targetY, minY, maxY),
-    );
+      for (let row = 0; row < 5 && !placement; row += 1) {
+        const y = Math.max(minY, desiredY - row * (calloutHeight + verticalGap));
+        for (const slot of slotOrder) {
+          const x = THREE.MathUtils.clamp(
+            indicator.targetX + slot * (indicator.width + horizontalGap),
+            leftInset + indicator.width / 2 + 10,
+            width - indicator.width / 2 - 10,
+          );
+          const overlaps = occupied.some((item) =>
+            Math.abs(item.x - x) < (item.width + indicator.width) / 2 + horizontalGap
+            && Math.abs(item.y - y) < calloutHeight + verticalGap,
+          );
+          if (!overlaps) {
+            placement = { x, y };
+            break;
+          }
+        }
+      }
 
-    for (let index = 1; index < ys.length; index += 1) {
-      ys[index] = Math.max(ys[index], ys[index - 1] + rowGap);
-    }
-    for (let index = ys.length - 2; index >= 0; index -= 1) {
-      ys[index] = Math.min(ys[index], ys[index + 1] - rowGap);
-    }
-    if (ys.length && ys[0] < minY) {
-      const shift = minY - ys[0];
-      ys.forEach((_, index) => { ys[index] += shift; });
-    }
-    if (ys.length && ys[ys.length - 1] > maxY) {
-      const shift = ys[ys.length - 1] - maxY;
-      ys.forEach((_, index) => { ys[index] -= shift; });
-    }
-
-    return group.map((indicator, index): BodyIndicator => {
-      const offset = indicator.width / 2 + 25;
-      const x = THREE.MathUtils.clamp(
-        indicator.targetX + (side === "left" ? -offset : offset),
+      const x = placement?.x ?? THREE.MathUtils.clamp(
+        indicator.targetX,
         leftInset + indicator.width / 2 + 10,
         width - indicator.width / 2 - 10,
       );
-      const y = ys[index];
+      const y = placement?.y ?? Math.max(minY, desiredY);
+      occupied.push({ x, y, width: indicator.width });
 
       return {
         id: indicator.id,
@@ -83,10 +74,9 @@ function crowdIndicators(
         selected: indicator.selected,
         x,
         y,
-        angle: Math.atan2(indicator.targetY - y, indicator.targetX - x) * (180 / Math.PI),
+        angle: Math.atan2(indicator.targetY - y, indicator.targetX - x) * (180 / Math.PI) - 90,
       };
     });
-  });
 }
 
 interface SolarSystemProps {
@@ -331,10 +321,8 @@ function IndicatorBridge({
     onIndicators(crowdIndicators(
       projectedIndicators,
       size.width,
-      size.height,
       leftInset,
       topInset,
-      bottomInset,
     ));
   });
 

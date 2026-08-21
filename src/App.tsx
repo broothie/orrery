@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   CalendarClock,
   Gauge,
   Pause,
@@ -159,15 +158,19 @@ export function App() {
             title={`Focus ${indicator.name}`}
             aria-label={`Focus ${indicator.name}`}
           >
-            <ArrowRight
-              className="indicator-arrow"
-              size={18}
+            <span
+              className="indicator-arrow-wrap"
               style={{
                 color: indicator.color,
                 transform: `rotate(${indicator.angle}deg)`,
               }}
               aria-hidden="true"
-            />
+            >
+              <svg className="indicator-arrow" viewBox="0 0 32 36">
+                <path d="M16 2 L16 30" />
+                <path d="M11 25 L16 30 L21 25" />
+              </svg>
+            </span>
             <span className="indicator-label">{indicator.name}</span>
           </button>
         ))}

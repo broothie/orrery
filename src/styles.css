@@ -227,15 +227,16 @@ select:focus-visible {
 .body-indicator {
   position: absolute;
   display: flex;
+  flex-direction: column-reverse;
   align-items: center;
-  gap: 4px;
+  gap: 0;
   min-width: 0;
-  padding: 4px 6px;
+  padding: 0;
   color: #e8ecef;
-  background: rgba(3, 5, 8, 0.68);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 4px;
-  font-size: 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  font-size: 13px;
   white-space: nowrap;
   transform: translate(-50%, -50%);
   pointer-events: auto;
@@ -243,24 +244,44 @@ select:focus-visible {
 
 .body-indicator:hover {
   color: #fff;
-  background: rgba(14, 19, 25, 0.95);
-  border-color: var(--line-strong);
+}
+
+.indicator-arrow-wrap {
+  position: relative;
+  width: 28px;
+  height: 32px;
+  flex: 0 0 auto;
+  transform-origin: center;
 }
 
 .indicator-arrow {
-  flex: 0 0 auto;
+  width: 28px;
+  height: 32px;
+  display: block;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.45;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   filter: drop-shadow(0 1px 2px #000);
 }
 
 .indicator-label {
   color: #e8ecef;
-  text-shadow: 0 1px 2px #000;
+  line-height: 18px;
+  text-shadow:
+    0 1px 2px #000,
+    0 0 4px #000;
 }
 
-.body-indicator.selected {
+.body-indicator:hover .indicator-label,
+.body-indicator:focus-visible .indicator-label,
+.body-indicator.selected .indicator-label {
   color: #fff;
-  background: rgba(24, 29, 35, 0.96);
-  border-color: rgba(255, 255, 255, 0.38);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
 }
 
 .time-console {

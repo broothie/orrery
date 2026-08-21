@@ -89,6 +89,7 @@ interface SolarSystemProps {
   visibleIds: ReadonlySet<BodyId>;
   focusSequence: number;
   onSelect: (id: BodyId, additive?: boolean) => void;
+  onClearSelection: () => void;
   onIndicators: (indicators: BodyIndicator[]) => void;
 }
 
@@ -239,15 +240,65 @@ function CameraRig({
   focusedId,
   selectedIds,
   focusSequence,
+  onClearSelection,
 }: Pick<
   SolarSystemProps,
-  "bodies" | "focusedId" | "selectedIds" | "focusSequence"
+  "bodies" | "focusedId" | "selectedIds" | "focusSequence" | "onClearSelection"
 >) {
   const controls = useRef<OrbitControlsImpl>(null);
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const initialized = useRef(false);
   const lastFitSequence = useRef(0);
+  const panPointer = useRef<{
+    id: number;
+    startX: number;
+    startY: number;
+    cleared: boolean;
+  } | null>(null);
   const isGroupSelection = selectedIds.size > 1;
+
+  useEffect(() => {
+    const element = gl.domElement;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.button !== 2 || selectedIds.size === 0) return;
+      panPointer.current = {
+        id: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        cleared: false,
+      };
+      if (controls.current) controls.current.enablePan = true;
+    };
+    const handlePointerMove = (event: PointerEvent) => {
+      const pointer = panPointer.current;
+      if (!pointer || pointer.id !== event.pointerId || pointer.cleared) return;
+      if (Math.hypot(
+        event.clientX - pointer.startX,
+        event.clientY - pointer.startY,
+      ) < 4) return;
+      pointer.cleared = true;
+      onClearSelection();
+    };
+    const handlePointerEnd = (event: PointerEvent) => {
+      const pointer = panPointer.current;
+      if (!pointer || pointer.id !== event.pointerId) return;
+      if (!pointer.cleared && controls.current) {
+        controls.current.enablePan = !isGroupSelection;
+      }
+      panPointer.current = null;
+    };
+
+    element.addEventListener("pointerdown", handlePointerDown, true);
+    element.addEventListener("pointermove", handlePointerMove, true);
+    element.addEventListener("pointerup", handlePointerEnd, true);
+    element.addEventListener("pointercancel", handlePointerEnd, true);
+    return () => {
+      element.removeEventListener("pointerdown", handlePointerDown, true);
+      element.removeEventListener("pointermove", handlePointerMove, true);
+      element.removeEventListener("pointerup", handlePointerEnd, true);
+      element.removeEventListener("pointercancel", handlePointerEnd, true);
+    };
+  }, [gl, isGroupSelection, onClearSelection, selectedIds.size]);
 
   useEffect(() => {
     if (!initialized.current) {
@@ -463,6 +514,7 @@ export function SolarSystem(props: SolarSystemProps) {
         focusedId={props.focusedId}
         selectedIds={props.selectedIds}
         focusSequence={props.focusSequence}
+        onClearSelection={props.onClearSelection}
       />
       <IndicatorBridge
         bodies={props.bodies}

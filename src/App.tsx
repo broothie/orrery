@@ -126,9 +126,18 @@ export function App() {
       return;
     }
 
+    if (selectedIds.size === 1 && selectedIds.has(id)) {
+      setSelectedIds(new Set());
+      return;
+    }
+
     setSelectedIds(new Set([id]));
     setFocusedId(id);
     setFocusSequence((sequence) => sequence + 1);
+  }, [selectedIds]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
   }, []);
 
   const toggleBodyVisibility = useCallback((id: BodyId) => {
@@ -169,6 +178,7 @@ export function App() {
           visibleIds={visibleIds}
           focusSequence={focusSequence}
           onSelect={selectBody}
+          onClearSelection={clearSelection}
           onIndicators={updateIndicators}
         />
       </section>

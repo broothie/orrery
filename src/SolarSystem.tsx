@@ -94,7 +94,6 @@ interface SolarSystemProps {
   focusedId: BodyId;
   selectedIds: ReadonlySet<BodyId>;
   focusSequence: number;
-  overviewSequence: number;
   onSelect: (id: BodyId, additive?: boolean) => void;
   onIndicators: (indicators: BodyIndicator[]) => void;
 }
@@ -172,16 +171,16 @@ function BodyMeshes({
 function CameraRig({
   bodies,
   focusedId,
+  selectedIds,
   focusSequence,
-  overviewSequence,
 }: Pick<
   SolarSystemProps,
-  "bodies" | "focusedId" | "focusSequence" | "overviewSequence"
+  "bodies" | "focusedId" | "selectedIds" | "focusSequence"
 >) {
   const controls = useRef<OrbitControlsImpl>(null);
   const { camera } = useThree();
-  const focused = bodies.find((body) => body.id === focusedId)!;
   const initialized = useRef(false);
+  const isGroupSelection = selectedIds.size > 1;
 
   useEffect(() => {
     if (!initialized.current) {
@@ -190,32 +189,57 @@ function CameraRig({
     }
     if (!focusSequence) return;
 
-    const direction = camera.position.clone().normalize();
-    if (direction.lengthSq() === 0) direction.set(0.35, 0.22, 1);
-    const distance = Math.max(focused.radiusUnits * 7, 0.018);
-    camera.position.copy(direction.multiplyScalar(distance));
-    camera.near = Math.max(focused.radiusUnits / 10_000, 1e-8);
-    camera.far = 50_000;
-    camera.updateProjectionMatrix();
-    controls.current?.target.set(0, 0, 0);
-    if (controls.current) {
-      controls.current.minDistance = Math.max(focused.radiusUnits * 1.08, 1e-7);
-      controls.current.update();
-    }
-  }, [camera, focusSequence, focused]);
+    const origin = bodies.find((body) => body.id === focusedId)!.position;
+    const selectedBodies = bodies.filter((body) => selectedIds.has(body.id));
+    const bounds = new THREE.Box3();
+    selectedBodies.forEach((body) => {
+      const position = new THREE.Vector3(
+        body.position[0] - origin[0],
+        body.position[1] - origin[1],
+        body.position[2] - origin[2],
+      );
+      const radius = new THREE.Vector3(
+        body.radiusUnits,
+        body.radiusUnits,
+        body.radiusUnits,
+      );
+      bounds.expandByPoint(position.clone().sub(radius));
+      bounds.expandByPoint(position.clone().add(radius));
+    });
 
-  useEffect(() => {
-    if (!overviewSequence) return;
-    camera.position.set(5_400, 3_200, 9_500);
-    camera.near = 0.00001;
-    camera.far = 50_000;
+    const center = bounds.getCenter(new THREE.Vector3());
+    const radius = Math.max(
+      ...selectedBodies.map((body) => {
+        const position = new THREE.Vector3(
+          body.position[0] - origin[0],
+          body.position[1] - origin[1],
+          body.position[2] - origin[2],
+        );
+        return position.distanceTo(center) + body.radiusUnits;
+      }),
+    );
+    const currentTarget = controls.current?.target ?? new THREE.Vector3();
+    const direction = camera.position.clone().sub(currentTarget).normalize();
+    if (direction.lengthSq() === 0) direction.set(0.35, 0.22, 1);
+    const perspectiveCamera = camera as THREE.PerspectiveCamera;
+    const verticalFov = THREE.MathUtils.degToRad(perspectiveCamera.fov);
+    const horizontalFov = 2 * Math.atan(
+      Math.tan(verticalFov / 2) * perspectiveCamera.aspect,
+    );
+    const fitFov = Math.min(verticalFov, horizontalFov);
+    const distance = isGroupSelection
+      ? Math.max(radius / Math.sin(fitFov / 2) * 1.15, 0.018)
+      : Math.max(radius * 7, 0.018);
+    camera.position.copy(center).add(direction.multiplyScalar(distance));
+    camera.near = Math.max(radius / 10_000, 1e-8);
+    camera.far = Math.max(50_000, distance * 4);
     camera.updateProjectionMatrix();
-    controls.current?.target.set(0, 0, 0);
+    controls.current?.target.copy(center);
     if (controls.current) {
-      controls.current.minDistance = 0.0001;
+      controls.current.minDistance = Math.max(radius * 1.08, 1e-7);
       controls.current.update();
     }
-  }, [camera, overviewSequence]);
+  }, [bodies, camera, focusSequence, focusedId, isGroupSelection, selectedIds]);
 
   return (
     <OrbitControls
@@ -223,12 +247,13 @@ function CameraRig({
       makeDefault
       enableDamping
       dampingFactor={0.08}
-      enablePan
+      enablePan={!isGroupSelection}
+      enableZoom={!isGroupSelection}
       screenSpacePanning
       mouseButtons={{
-        LEFT: THREE.MOUSE.PAN,
+        LEFT: THREE.MOUSE.ROTATE,
         MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.ROTATE,
+        RIGHT: THREE.MOUSE.PAN,
       }}
       zoomSpeed={1.35}
       panSpeed={0.8}
@@ -339,8 +364,8 @@ export function SolarSystem(props: SolarSystemProps) {
       <CameraRig
         bodies={props.bodies}
         focusedId={props.focusedId}
+        selectedIds={props.selectedIds}
         focusSequence={props.focusSequence}
-        overviewSequence={props.overviewSequence}
       />
       <IndicatorBridge
         bodies={props.bodies}

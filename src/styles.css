@@ -78,7 +78,6 @@ select:focus-visible {
 }
 
 .brand-block,
-.topbar-actions,
 .playback-controls,
 .control-field {
   display: flex;
@@ -125,10 +124,6 @@ select:focus-visible {
 .brand-block h1 {
   font-size: 17px;
   line-height: 19px;
-}
-
-.topbar-actions {
-  gap: 10px;
 }
 
 .icon-button,

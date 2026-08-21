@@ -6,7 +6,6 @@ import {
   Play,
   RotateCcw,
   RotateCw,
-  Search,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -44,7 +43,6 @@ export function App() {
     () => new Set(["sun"]),
   );
   const [focusSequence, setFocusSequence] = useState(0);
-  const [overviewSequence, setOverviewSequence] = useState(0);
   const [indicators, setIndicators] = useState<BodyIndicator[]>([]);
   const lastTick = useRef(0);
 
@@ -88,18 +86,13 @@ export function App() {
         }
         return next;
       });
+      setFocusSequence((sequence) => sequence + 1);
       return;
     }
 
     setSelectedIds(new Set([id]));
     setFocusedId(id);
     setFocusSequence((sequence) => sequence + 1);
-  }, []);
-
-  const showOverview = useCallback(() => {
-    setSelectedIds(new Set(["sun"]));
-    setFocusedId("sun");
-    setOverviewSequence((sequence) => sequence + 1);
   }, []);
 
   const updateIndicators = useCallback((next: BodyIndicator[]) => {
@@ -114,7 +107,6 @@ export function App() {
           focusedId={focusedId}
           selectedIds={selectedIds}
           focusSequence={focusSequence}
-          overviewSequence={overviewSequence}
           onSelect={selectBody}
           onIndicators={updateIndicators}
         />
@@ -130,17 +122,6 @@ export function App() {
           </div>
         </div>
 
-        <div className="topbar-actions">
-          <button
-            className="icon-button"
-            type="button"
-            title="Return to system overview"
-            aria-label="Return to system overview"
-            onClick={showOverview}
-          >
-            <Search size={18} />
-          </button>
-        </div>
       </header>
 
       <aside className="body-rail" aria-label="Celestial bodies">
